@@ -1,220 +1,297 @@
 <?php
 session_start();
 
-// Verifica se o usuário está logado
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login/login.php"); // Redireciona para a tela de login
+// Se o usuário já estiver logado, redireciona para a dashboard de acordo com o tipo de usuário
+if (isset($_SESSION['user_id'])) {
+    // Verifica o tipo de usuário e redireciona para a página adequada
+    if ($_SESSION['tipo_usuario'] == 'admin') {
+        header("Location: ../dashboard/admin/index.php");
+    } elseif ($_SESSION['tipo_usuario'] == 'professor') {
+        header("Location: ../dashboard/professor/index.php");
+    } else {
+        header("Location: ../dashboard/aluno/index.php");
+    }
     exit();
 }
 
-// Desabilita o cache da página
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Cache-Control: post-check=0, pre-check=0", false);
-header("Pragma: no-cache");
+// Conectar ao banco de dados
+$host = "localhost";
+$user = "root"; 
+$password = "";
+$dbname = "autismo_plataforma"; 
+
+$conn = new mysqli($host, $user, $password, $dbname);
+
+// Verificar se a conexão foi bem-sucedida
+if ($conn->connect_error) {
+    die("Erro ao conectar ao banco de dados. Por favor, tente novamente mais tarde.");
+}
+
+// Variável para armazenar a mensagem de erro
+$erro = "";
+
+// Verificar se o formulário foi enviado
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);  // Filtra e-mail
+    $senha = $_POST['senha']; // Senha
+
+    // Consulta segura usando prepared statements
+    $sql = "SELECT * FROM usuarios WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        
+        // Verificar a senha usando a função password_verify
+        if (password_verify($senha, $user['senha'])) {
+            // Login bem-sucedido
+            $_SESSION['user_id'] = $user['id']; // Armazenar ID do usuário na sessão
+            $_SESSION['user_name'] = $user['nome']; // Armazenar nome do usuário na sessão
+            $_SESSION['tipo_usuario'] = $user['tipo_usuario']; // Armazenar tipo de usuário
+
+            // Redireciona de acordo com o tipo de usuário
+            if ($user['tipo_usuario'] == 'admin') {
+                header("Location: ../dashboard/admin/index.php");
+            } elseif ($user['tipo_usuario'] == 'professor') {
+                header("Location: ../dashboard/professor/index.php");
+            } else {
+                header("Location: ../dashboard/aluno/index.php");
+            }
+            exit();
+        } else {
+            $erro = "Senha incorreta!";
+        }
+    } else {
+        $erro = "Usuário não encontrado!";
+    }
+}
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroDev - Educação Inclusiva</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <!--=============== REMIXICONS ===============-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css">
+
+    <!--=============== CSS ===============-->
+    <link rel="stylesheet" href="styleTelaLogin.css">
+    
+    <title>Responsive login and registration form - Bedimcode</title>
     <style>
-        /* Animação RGB para a palavra "Dev" */
-        @keyframes rgbGlow {
-            0% { color: #ff0000; }
-            25% { color: #00ff00; }
-            50% { color: #0000ff; }
-            75% { color: #ff00ff; }
-            100% { color: #ff0000; }
-        }
-
-        .rgb-text {
-            animation: rgbGlow 3s linear infinite;
-        }
-
-        /* Estilo do botão de cadastro igual ao do botão de login */
-        .btn-custom {
-            background-color: #007bff;
-            color: white;
-            border: none;
-        }
-
-        .btn-custom:hover {
-            background-color: #0056b3;
-            color: white;
-        }
-
-        /* Animação para os cards */
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: rotate(5deg);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Scroll suave */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* Seções específicas */
-        .section {
-            padding: 60px 0;
-        }
-
-        .section h2 {
+        /* Estilos para a mensagem de erro */
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ef9a9a;
             text-align: center;
-            margin-bottom: 40px;
+            font-size: 14px;
+            animation:  0.3s ;
         }
 
-        .section .card {
-            margin: 20px 0;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos para a notificação */
+        .notification {
+            display: none;
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideDown 2s ease-out, fadeOut 7s ease-out 7s;
+        }
+
+        @keyframes slideDown {
+            from { top: -100px; }
+            to { top: 20px; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
     </style>
+
+
+<script>
+    // Função para esconder a mensagem de erro após 5 segundos
+    function hideErrorMessage() {
+        const errorMessage = document.querySelector('.error-message');
+        if (errorMessage) {
+            setTimeout(() => {
+                errorMessage.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    errorMessage.remove();
+                }, 200);
+            }, 2000); // 5000ms = 5 segundos
+        }
+    }
+
+    // Executa quando a página carrega
+    document.addEventListener('DOMContentLoaded', hideErrorMessage);
+</script>
 </head>
 <body>
-    <?php
-    // Exibe a mensagem de "Cadastro realizado com sucesso" se existir na sessão
-    if (isset($_SESSION['cadastro_sucesso'])) {
-        echo '<div class="alert alert-success text-center">Cadastro realizado com sucesso!</div>';
-        unset($_SESSION['cadastro_sucesso']); // Remove a mensagem após exibição
-    }
-    ?>
+    <!--=============== LOGIN IMAGE ===============-->
+    <svg class="login__blob" viewBox="0 0 566 840" xmlns="http://www.w3.org/2000/svg">
+        <mask id="mask0" mask-type="alpha">
+            <path d="M342.407 73.6315C388.53 56.4007 394.378 17.3643 391.538 
+            0H566V840H0C14.5385 834.991 100.266 804.436 77.2046 707.263C49.6393 
+            591.11 115.306 518.927 176.468 488.873C363.385 397.026 156.98 302.824 
+            167.945 179.32C173.46 117.209 284.755 95.1699 342.407 73.6315Z"/>
+        </mask>
+    
+        <g mask="url(#mask0)">
+            <path d="M342.407 73.6315C388.53 56.4007 394.378 17.3643 391.538 
+            0H566V840H0C14.5385 834.991 100.266 804.436 77.2046 707.263C49.6393 
+            591.11 115.306 518.927 176.468 488.873C363.385 397.026 156.98 302.824 
+            167.945 179.32C173.46 117.209 284.755 95.1699 342.407 73.6315Z"/>
+    
+            <!-- Insert your image (recommended size: 1000 x 1200) -->
+            <image class="login__img" href="img/bg-img.png"/>
+        </g>
+    </svg>      
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="index.php">
-                Neuro<span class="rgb-text">Dev</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#inicio">Início</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#clinica">Clínica</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#equipe">Equipe</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
-                </ul>
-                <div class="d-flex ms-lg-3">
-                    <a href="login/logout.php" class="btn btn-danger">Sair</a> <!-- Botão de logout -->
-                </div>
+    <!--=============== LOGIN ===============-->
+    <div class="login container grid" id="loginAccessRegister">
+        <!--===== LOGIN ACCESS =====-->
+        <div class="login__access">
+            <h1 class="login__title">Faça login em sua conta.</h1>
+            
+            <div class="login__area">
+                <!-- Mensagem de erro -->
+                <?php if (!empty($erro)): ?>
+                    <div class="error-message">
+                        <?php echo htmlspecialchars($erro); ?>
+                    </div>
+                <?php endif; ?>
+
+                <form action="login.php" class="login__form" method="POST">
+                    <div class="login__content grid">
+                        <div class="login__box">
+                            <input type="email" id="email" name="email" required placeholder=" " class="login__input">
+                            <label for="email" class="login__label">Email</label>
+                
+                            <i class="ri-mail-fill login__icon"></i>
+                        </div>
+            
+                        <div class="login__box">
+                            <input type="password" id="password" name="senha" required placeholder=" " class="login__input">
+                            <label for="password" class="login__label">Password</label>
+                
+                            <i class="ri-eye-off-fill login__icon login__password" id="loginPassword"></i>
+                        </div>
+                    </div>
+            
+                    <a href="#" class="login__forgot">Esqueceu sua senha?</a>
+            
+                    <button type="submit" class="login__button">Login</button>
+                </form>
+    
+                <p class="login__switch">
+                    Don't have an account? 
+                    <button id="loginButtonRegister">Criar uma conta</button>
+                </p>
             </div>
         </div>
-    </nav>
 
-    <!-- Banner Rotativo -->
-    <div id="mainCarousel" class="carousel slide mt-3" data-bs-ride="carousel">
-        <div class="carousel-inner">
-            <div class="carousel-item active">
-                <img src="https://via.placeholder.com/1200x450" class="d-block w-100" alt="Slide 1">
-                <div class="carousel-caption d-none d-md-block">
-                    <h5>Educação Inclusiva</h5>
-                    <p>Promovendo o potencial único de cada aluno.</p>
-                </div>
-            </div>
-            <div class="carousel-item">
-                <img src="https://via.placeholder.com/1200x450" class="d-block w-100" alt="Slide 2">
-                <div class="carousel-caption d-none d-md-block">
-                    <h5>Aprendizado Personalizado</h5>
-                    <p>Acompanhamento dedicado para cada necessidade.</p>
-                </div>
+        <!--===== LOGIN REGISTER =====-->
+        <div class="login__register">
+            <h1 class="login__title">Crie uma nova conta.</h1>
+        
+            <div class="login__area">
+                <form action="cadastro.php" class="login__form" method="POST">
+                    <div class="login__content grid">
+                        <div class="login__group grid">
+                            <div class="login__box">
+                                <input type="text" id="names" name="nome" required placeholder=" " class="login__input">
+                                <label for="names" class="login__label">Names</label>
+                                <i class="ri-id-card-fill login__icon"></i>
+                            </div>
+        
+                            <div class="login__box">
+                                <input type="text" id="surnames" name="surnames" required placeholder=" " class="login__input">
+                                <label for="surnames" class="login__label">Surnames</label>
+                                <i class="ri-id-card-fill login__icon"></i>
+                            </div>
+                        </div>
+        
+                        <div class="login__box">
+                            <input type="email" id="emailCreate" name="email" required placeholder=" " class="login__input">
+                            <label for="emailCreate" class="login__label">Email</label>
+                            <i class="ri-mail-fill login__icon"></i>
+                        </div>
+        
+                        <div class="login__box">
+                            <input type="password" id="passwordCreate" name="senha" required placeholder=" " class="login__input">
+                            <label for="passwordCreate" class="login__label">Password</label>
+                            <i class="ri-eye-off-fill login__icon login__password" id="loginPasswordCreate"></i>
+                        </div>
+        
+                        <!-- Novo campo para selecionar tipo de usuário -->
+                        <div class="login__box">
+                            <select id="tipo_usuario" class="login__input" name="tipo_usuario" required data-live-search="false" onchange="toggleExtraFields()">
+                                <option value="" disabled selected hidden>Escolha o tipo de usuário</option>
+                                <option value="aluno">Aluno</option>
+                                <option value="professor">Professor</option>
+                            </select>
+                            <label for="tipo_usuario" class="login__label">Tipo de usuario</label>
+                        </div>
+                    </div>
+        
+                    <button type="submit" class="login__button">Criar uma conta</button>
+                </form>
+        
+                <p class="login__switch">
+                    Already have an account? 
+                    <button id="loginButtonAccess">Log In</button>
+                </p>
             </div>
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Anterior</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Próximo</span>
-        </button>
     </div>
-
-    <!-- Seções -->
-    <section id="clinica" class="section bg-light">
-        <h2>Clínica</h2>
-        <div class="container">
-            <p>Aqui na NeuroDev, oferecemos um ambiente acolhedor para o desenvolvimento de crianças com necessidades especiais. Nossa clínica é equipada com profissionais capacitados e um ambiente que favorece o aprendizado inclusivo.</p>
-        </div>
-    </section>
-
-    <section id="equipe" class="section">
-        <h2>Equipe</h2>
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title">Professora Ana</h5>
-                            <p class="card-text">Especialista em Educação Inclusiva. Com vasta experiência em lidar com alunos com TDAH e autismo.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title">Professor João</h5>
-                            <p class="card-text">Formado em Psicologia Educacional, focado no acompanhamento individualizado dos alunos.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title">Psicóloga Maria</h5>
-                            <p class="card-text">Com vasta experiência em terapias comportamentais e desenvolvimento emocional de crianças.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="contato" class="section bg-light">
-        <h2>Contato</h2>
-        <div class="container">
-            <form>
-                <div class="mb-3">
-                    <label for="nome" class="form-label">Nome</label>
-                    <input type="text" class="form-control" id="nome" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">E-mail</label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="mensagem" class="form-label">Mensagem</label>
-                    <textarea class="form-control" id="mensagem" rows="3" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Enviar</button>
-            </form>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-dark text-light text-center py-3 mt-5">
-        <p>&copy; 2024 NeuroDev. Todos os direitos reservados.</p>
-    </footer>
-
-    <!-- Scripts do Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Script para bloquear o botão "Voltar" do navegador -->
+    
+    <!--=============== MAIN JS ===============-->
+    <script src="script.js"></script>
     <script>
-        // Impede o uso do botão "Voltar" do navegador
-        history.pushState(null, document.title, location.href);
-        window.addEventListener('popstate', function (event) {
-            history.pushState(null, document.title, location.href);
-            // Força o recarregamento da página para validar a sessão
-            window.location.reload();
-        });
+        function toggleExtraFields() {
+            const tipoUsuario = document.getElementById("tipo_usuario").value;
+
+            // Mostrar campo CPF apenas para "professor"
+            document.getElementById("cpf-field").style.display = (tipoUsuario === "professor") ? "block" : "none";
+            // Mostrar campo Documento Profissional apenas para "professor"
+            document.getElementById("doc-professor-field").style.display = (tipoUsuario === "professor") ? "block" : "none";
+            // Mostrar campo Matrícula apenas para "aluno"
+            document.getElementById("matricula-field").style.display = (tipoUsuario === "aluno") ? "block" : "none";
+            // Mostrar campo Comprovante de Matrícula apenas para "aluno"
+            document.getElementById("comprovante-matricula-field").style.display = (tipoUsuario === "aluno") ? "block" : "none";
+        }
     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
+    <!-- Notificação de sucesso -->
+    <div id="successNotification" class="notification">
+        <p>Cadastro realizado com sucesso!</p>
+    </div>
 </body>
 </html>
