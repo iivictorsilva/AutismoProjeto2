@@ -1,297 +1,462 @@
-<?php
-session_start();
-
-// Se o usuário já estiver logado, redireciona para a dashboard de acordo com o tipo de usuário
-if (isset($_SESSION['user_id'])) {
-    // Verifica o tipo de usuário e redireciona para a página adequada
-    if ($_SESSION['tipo_usuario'] == 'admin') {
-        header("Location: ../dashboard/admin/index.php");
-    } elseif ($_SESSION['tipo_usuario'] == 'professor') {
-        header("Location: ../dashboard/professor/index.php");
-    } else {
-        header("Location: ../dashboard/aluno/index.php");
-    }
-    exit();
-}
-
-// Conectar ao banco de dados
-$host = "localhost";
-$user = "root"; 
-$password = "";
-$dbname = "autismo_plataforma"; 
-
-$conn = new mysqli($host, $user, $password, $dbname);
-
-// Verificar se a conexão foi bem-sucedida
-if ($conn->connect_error) {
-    die("Erro ao conectar ao banco de dados. Por favor, tente novamente mais tarde.");
-}
-
-// Variável para armazenar a mensagem de erro
-$erro = "";
-
-// Verificar se o formulário foi enviado
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);  // Filtra e-mail
-    $senha = $_POST['senha']; // Senha
-
-    // Consulta segura usando prepared statements
-    $sql = "SELECT * FROM usuarios WHERE email = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-        
-        // Verificar a senha usando a função password_verify
-        if (password_verify($senha, $user['senha'])) {
-            // Login bem-sucedido
-            $_SESSION['user_id'] = $user['id']; // Armazenar ID do usuário na sessão
-            $_SESSION['user_name'] = $user['nome']; // Armazenar nome do usuário na sessão
-            $_SESSION['tipo_usuario'] = $user['tipo_usuario']; // Armazenar tipo de usuário
-
-            // Redireciona de acordo com o tipo de usuário
-            if ($user['tipo_usuario'] == 'admin') {
-                header("Location: ../dashboard/admin/index.php");
-            } elseif ($user['tipo_usuario'] == 'professor') {
-                header("Location: ../dashboard/professor/index.php");
-            } else {
-                header("Location: ../dashboard/aluno/index.php");
-            }
-            exit();
-        } else {
-            $erro = "Senha incorreta!";
-        }
-    } else {
-        $erro = "Usuário não encontrado!";
-    }
-}
-
-$conn->close();
-?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!--=============== REMIXICONS ===============-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css">
-
-    <!--=============== CSS ===============-->
-    <link rel="stylesheet" href="styleTelaLogin.css">
-    
-    <title>Responsive login and registration form - Bedimcode</title>
+    <title>NeuroDev - Plataforma de Apoio ao Autismo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        /* Estilos para a mensagem de erro */
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #ef9a9a;
-            text-align: center;
-            font-size: 14px;
-            animation:  0.3s ;
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --accent-color: #f6c23e;
+            --dark-color: #5a5c69;
+            --light-color: #f8f9fc;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--light-color);
         }
-
-        /* Estilos para a notificação */
-        .notification {
-            display: none;
-            position: fixed;
-            top: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #4CAF50;
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
             color: white;
-            padding: 15px 30px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            animation: slideDown 2s ease-out, fadeOut 7s ease-out 7s;
+            padding: 5rem 0;
+            position: relative;
+            overflow: hidden;
         }
-
-        @keyframes slideDown {
-            from { top: -100px; }
-            to { top: 20px; }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .btn-hero {
+            padding: 0.8rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #17a673;
+            border-color: #17a673;
+        }
+        
+        .btn-outline-light:hover {
+            color: var(--primary-color);
+        }
+        
+        .features-section {
+            padding: 5rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            height: 100%;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-text {
+            color: #858796;
+        }
+        
+        .testimonials-section {
+            background-color: #f8f9fc;
+            padding: 5rem 0;
+        }
+        
+        .testimonial-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .testimonial-author {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #17a673 100%);
+            color: white;
+            padding: 5rem 0;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 3rem 0;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            margin-right: 1rem;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .social-icons a {
+            color: white;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .navbar {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+        }
+        
+        .nav-link {
+            font-weight: 600;
+            padding: 0.5rem 1rem !important;
+        }
+        
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==');
         }
     </style>
-
-
-<script>
-    // Função para esconder a mensagem de erro após 5 segundos
-    function hideErrorMessage() {
-        const errorMessage = document.querySelector('.error-message');
-        if (errorMessage) {
-            setTimeout(() => {
-                errorMessage.style.animation = 'fadeOut 0.5s ease-out';
-                setTimeout(() => {
-                    errorMessage.remove();
-                }, 200);
-            }, 2000); // 5000ms = 5 segundos
-        }
-    }
-
-    // Executa quando a página carrega
-    document.addEventListener('DOMContentLoaded', hideErrorMessage);
-</script>
 </head>
 <body>
-    <!--=============== LOGIN IMAGE ===============-->
-    <svg class="login__blob" viewBox="0 0 566 840" xmlns="http://www.w3.org/2000/svg">
-        <mask id="mask0" mask-type="alpha">
-            <path d="M342.407 73.6315C388.53 56.4007 394.378 17.3643 391.538 
-            0H566V840H0C14.5385 834.991 100.266 804.436 77.2046 707.263C49.6393 
-            591.11 115.306 518.927 176.468 488.873C363.385 397.026 156.98 302.824 
-            167.945 179.32C173.46 117.209 284.755 95.1699 342.407 73.6315Z"/>
-        </mask>
-    
-        <g mask="url(#mask0)">
-            <path d="M342.407 73.6315C388.53 56.4007 394.378 17.3643 391.538 
-            0H566V840H0C14.5385 834.991 100.266 804.436 77.2046 707.263C49.6393 
-            591.11 115.306 518.927 176.468 488.873C363.385 397.026 156.98 302.824 
-            167.945 179.32C173.46 117.209 284.755 95.1699 342.407 73.6315Z"/>
-    
-            <!-- Insert your image (recommended size: 1000 x 1200) -->
-            <image class="login__img" href="img/bg-img.png"/>
-        </g>
-    </svg>      
-
-    <!--=============== LOGIN ===============-->
-    <div class="login container grid" id="loginAccessRegister">
-        <!--===== LOGIN ACCESS =====-->
-        <div class="login__access">
-            <h1 class="login__title">Faça login em sua conta.</h1>
-            
-            <div class="login__area">
-                <!-- Mensagem de erro -->
-                <?php if (!empty($erro)): ?>
-                    <div class="error-message">
-                        <?php echo htmlspecialchars($erro); ?>
-                    </div>
-                <?php endif; ?>
-
-                <form action="login.php" class="login__form" method="POST">
-                    <div class="login__content grid">
-                        <div class="login__box">
-                            <input type="email" id="email" name="email" required placeholder=" " class="login__input">
-                            <label for="email" class="login__label">Email</label>
-                
-                            <i class="ri-mail-fill login__icon"></i>
-                        </div>
-            
-                        <div class="login__box">
-                            <input type="password" id="password" name="senha" required placeholder=" " class="login__input">
-                            <label for="password" class="login__label">Password</label>
-                
-                            <i class="ri-eye-off-fill login__icon login__password" id="loginPassword"></i>
-                        </div>
-                    </div>
-            
-                    <a href="#" class="login__forgot">Esqueceu sua senha?</a>
-            
-                    <button type="submit" class="login__button">Login</button>
-                </form>
-    
-                <p class="login__switch">
-                    Don't have an account? 
-                    <button id="loginButtonRegister">Criar uma conta</button>
-                </p>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain"></i> NeuroDev
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Recursos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">Sobre</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">Depoimentos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login/login.php">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary ms-2" href="login/login.php">Cadastre-se</a>
+                    </li>
+                </ul>
             </div>
         </div>
+    </nav>
 
-        <!--===== LOGIN REGISTER =====-->
-        <div class="login__register">
-            <h1 class="login__title">Crie uma nova conta.</h1>
-        
-            <div class="login__area">
-                <form action="cadastro.php" class="login__form" method="POST">
-                    <div class="login__content grid">
-                        <div class="login__group grid">
-                            <div class="login__box">
-                                <input type="text" id="names" name="nome" required placeholder=" " class="login__input">
-                                <label for="names" class="login__label">Names</label>
-                                <i class="ri-id-card-fill login__icon"></i>
-                            </div>
-        
-                            <div class="login__box">
-                                <input type="text" id="surnames" name="surnames" required placeholder=" " class="login__input">
-                                <label for="surnames" class="login__label">Surnames</label>
-                                <i class="ri-id-card-fill login__icon"></i>
-                            </div>
-                        </div>
-        
-                        <div class="login__box">
-                            <input type="email" id="emailCreate" name="email" required placeholder=" " class="login__input">
-                            <label for="emailCreate" class="login__label">Email</label>
-                            <i class="ri-mail-fill login__icon"></i>
-                        </div>
-        
-                        <div class="login__box">
-                            <input type="password" id="passwordCreate" name="senha" required placeholder=" " class="login__input">
-                            <label for="passwordCreate" class="login__label">Password</label>
-                            <i class="ri-eye-off-fill login__icon login__password" id="loginPasswordCreate"></i>
-                        </div>
-        
-                        <!-- Novo campo para selecionar tipo de usuário -->
-                        <div class="login__box">
-                            <select id="tipo_usuario" class="login__input" name="tipo_usuario" required data-live-search="false" onchange="toggleExtraFields()">
-                                <option value="" disabled selected hidden>Escolha o tipo de usuário</option>
-                                <option value="aluno">Aluno</option>
-                                <option value="professor">Professor</option>
-                            </select>
-                            <label for="tipo_usuario" class="login__label">Tipo de usuario</label>
-                        </div>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="bg-pattern"></div>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="hero-title">Transformando vidas através do desenvolvimento neurodivergente</h1>
+                    <p class="hero-subtitle">A plataforma completa de apoio para indivíduos com autismo e suas famílias</p>
+                    <div class="d-flex flex-wrap">
+                        <a href="register.html" class="btn btn-light btn-hero">Comece Agora</a>
+                        <a href="#features" class="btn btn-outline-light btn-hero">Saiba Mais</a>
                     </div>
-        
-                    <button type="submit" class="login__button">Criar uma conta</button>
-                </form>
-        
-                <p class="login__switch">
-                    Already have an account? 
-                    <button id="loginButtonAccess">Log In</button>
-                </p>
+                </div>
+                <div class="col-lg-6 d-none d-lg-block">
+                    <img src="https://via.placeholder.com/600x400" alt="Criança feliz aprendendo" class="img-fluid rounded shadow-lg">
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!--=============== MAIN JS ===============-->
-    <script src="script.js"></script>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Como podemos ajudar</h2>
+                <p class="lead text-muted">Ferramentas poderosas para apoiar o desenvolvimento</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <h3 class="feature-title">Terapia Remota</h3>
+                        <p class="feature-text">Sessões de terapia online com profissionais especializados em autismo, no conforto da sua casa.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <h3 class="feature-title">Tarefas Personalizadas</h3>
+                        <p class="feature-text">Atividades adaptadas para promover habilidades sociais, comunicação e independência.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Agendamento Inteligente</h3>
+                        <p class="feature-text">Organize consultas, terapias e eventos importantes com nosso sistema de agendamento.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="feature-title">Acompanhamento de Progresso</h3>
+                        <p class="feature-text">Relatórios detalhados e visuais para monitorar o desenvolvimento ao longo do tempo.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="feature-title">Comunidade de Apoio</h3>
+                        <p class="feature-text">Conecte-se com outras famílias e compartilhe experiências e estratégias.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Acesso em Qualquer Lugar</h3>
+                        <p class="feature-text">Plataforma responsiva que funciona em computadores, tablets e smartphones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="py-5 bg-light" id="about">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <img src="https://via.placeholder.com/600x400" alt="Sobre a NeuroDev" class="img-fluid rounded shadow">
+                </div>
+                <div class="col-lg-6">
+                    <h2 class="fw-bold mb-4">Sobre a NeuroDev</h2>
+                    <p class="lead">Nossa missão é fornecer ferramentas e recursos que empoderem indivíduos com autismo e suas famílias.</p>
+                    <p>A NeuroDev nasceu da necessidade de criar uma plataforma abrangente que unisse tecnologia e conhecimento especializado para apoiar o desenvolvimento neurodivergente. Nossa equipe multidisciplinar inclui terapeutas, educadores e desenvolvedores comprometidos em fazer a diferença.</p>
+                    <div class="d-flex mt-4">
+                        <div class="me-4">
+                            <h3 class="text-primary">500+</h3>
+                            <p>Famílias atendidas</p>
+                        </div>
+                        <div class="me-4">
+                            <h3 class="text-primary">50+</h3>
+                            <p>Profissionais especializados</p>
+                        </div>
+                        <div>
+                            <h3 class="text-primary">24/7</h3>
+                            <p>Suporte disponível</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section" id="testimonials">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">O que dizem sobre nós</h2>
+                <p class="lead text-muted">Depoimentos de famílias e profissionais</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"A NeuroDev mudou nossa vida. Meu filho progrediu mais em 3 meses do que em um ano de terapias convencionais."</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://via.placeholder.com/50" alt="Mãe" class="rounded-circle me-3">
+                            <div>
+                                <p class="testimonial-author mb-0">Ana Silva</p>
+                                <small>Mãe do João, 8 anos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"Como terapeuta, a plataforma me permite acompanhar meus pacientes de forma mais eficiente e com dados concretos."</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://via.placeholder.com/50" alt="Terapeuta" class="rounded-circle me-3">
+                            <div>
+                                <p class="testimonial-author mb-0">Dr. Carlos Mendes</p>
+                                <small>Terapeuta Ocupacional</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"Finalmente uma solução completa que entende as necessidades reais das famílias com autismo. Recomendo a todos!"</p>
+                        <div class="d-flex align-items-center">
+                            <img src="https://via.placeholder.com/50" alt="Pai" class="rounded-circle me-3">
+                            <div>
+                                <p class="testimonial-author mb-0">Roberto Almeida</p>
+                                <small>Pai da Sofia, 6 anos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Pronto para começar sua jornada?</h2>
+            <p class="lead mb-4">Junte-se a centenas de famílias que estão transformando vidas com a NeuroDev.</p>
+            <a href="register.html" class="btn btn-light btn-lg me-3">Cadastre-se Gratuitamente</a>
+            <a href="login.html" class="btn btn-outline-light btn-lg">Fazer Login</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h3 class="text-white mb-4">
+                        <i class="fas fa-brain"></i> NeuroDev
+                    </h3>
+                    <p>Plataforma de apoio ao desenvolvimento neurodivergente, oferecendo ferramentas, recursos e comunidade para indivíduos com autismo e suas famílias.</p>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-white mb-4">Links</h5>
+                    <div class="footer-links d-flex flex-column">
+                        <a href="#features">Recursos</a>
+                        <a href="#about">Sobre</a>
+                        <a href="#testimonials">Depoimentos</a>
+                        <a href="#">Preços</a>
+                        <a href="#">Blog</a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-white mb-4">Legal</h5>
+                    <div class="footer-links d-flex flex-column">
+                        <a href="#">Termos</a>
+                        <a href="#">Privacidade</a>
+                        <a href="#">Cookies</a>
+                        <a href="#">FAQ</a>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="text-white mb-4">Contato</h5>
+                    <p><i class="fas fa-map-marker-alt me-2"></i> São Paulo, Brasil</p>
+                    <p><i class="fas fa-envelope me-2"></i> contato@neurodev.com</p>
+                    <p><i class="fas fa-phone me-2"></i> (11) 1234-5678</p>
+                    <div class="social-icons mt-3">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-light opacity-10">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; 2023 NeuroDev. Todos os direitos reservados.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-0">Desenvolvido com <i class="fas fa-heart text-danger"></i> para a comunidade autista</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function toggleExtraFields() {
-            const tipoUsuario = document.getElementById("tipo_usuario").value;
-
-            // Mostrar campo CPF apenas para "professor"
-            document.getElementById("cpf-field").style.display = (tipoUsuario === "professor") ? "block" : "none";
-            // Mostrar campo Documento Profissional apenas para "professor"
-            document.getElementById("doc-professor-field").style.display = (tipoUsuario === "professor") ? "block" : "none";
-            // Mostrar campo Matrícula apenas para "aluno"
-            document.getElementById("matricula-field").style.display = (tipoUsuario === "aluno") ? "block" : "none";
-            // Mostrar campo Comprovante de Matrícula apenas para "aluno"
-            document.getElementById("comprovante-matricula-field").style.display = (tipoUsuario === "aluno") ? "block" : "none";
-        }
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
     </script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
-
-    <!-- Notificação de sucesso -->
-    <div id="successNotification" class="notification">
-        <p>Cadastro realizado com sucesso!</p>
-    </div>
 </body>
 </html>
