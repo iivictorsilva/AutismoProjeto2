@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e é administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../../login/login.php");
+    exit();
+}
+
+// Verificar se o usuário é um administrador, caso contrário, redireciona para verifica_acesso.php
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");
     exit();
 }
 
@@ -32,6 +38,9 @@ if (isset($_GET['id'])) {
         echo "Aluno não encontrado.";
         exit();
     }
+} else {
+    echo "ID de aluno não fornecido.";
+    exit();
 }
 
 // Atualizar os dados do aluno
@@ -50,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

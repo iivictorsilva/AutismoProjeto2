@@ -1,4 +1,18 @@
 <?php
+session_start();
+
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login/login.php");  // Diretório relativo
+    exit();
+}
+
+// Verificar se o usuário é administrador
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");  // Diretório relativo
+    exit();
+}
+
 // Conectar ao banco de dados
 $host = "localhost";
 $user = "root";
@@ -20,6 +34,8 @@ $alunos = $result_alunos->fetch_assoc();
 $professores = $result_professores->fetch_assoc();
 $eventos = $result_eventos->fetch_assoc();
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

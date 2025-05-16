@@ -14,7 +14,7 @@ if (isset($_GET['id'])) {
     $professor_id = $_SESSION['user_id']; // ID do professor logado
 
     // Substitua $aluno_id pelo ID do aluno para quem a tarefa será enviada
-    $aluno_id = 8; // Exemplo: ID do aluno (substitua pelo valor correto)
+    $aluno_id = $_SESSION['user_id']; // Exemplo: ID do aluno (substitua pelo valor correto)
 
     // Atualizar a tarefa para vincular ao aluno
     $sql = "UPDATE tarefas SET aluno_id = ? WHERE id = ?";

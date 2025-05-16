@@ -1,0 +1,5 @@
+[27-Mar-2025 20:41:57 Europe/Berlin] PHP Warning:  require_once(C:\xampp\htdocs\AutismoProjeto2\dashboard\aluno/../includes/conexao.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\AutismoProjeto2\dashboard\aluno\marca_concluida.php on line 14
+[27-Mar-2025 20:41:57 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required 'C:\xampp\htdocs\AutismoProjeto2\dashboard\aluno/../includes/conexao.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\AutismoProjeto2\dashboard\aluno\marca_concluida.php:14
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\AutismoProjeto2\dashboard\aluno\marca_concluida.php on line 14

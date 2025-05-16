@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e se é um administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login/login.php");  // Diretório relativo
+    exit();
+}
+
+// Verificar se o usuário é administrador
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");  // Diretório relativo
     exit();
 }
 
@@ -25,6 +31,11 @@ $sql = "SELECT r.id, u.nome AS aluno_nome, r.data, r.nota, r.comentarios
         FROM relatorios r 
         JOIN usuarios u ON r.aluno_id = u.id";
 $result = $conn->query($sql);
+
+// Verificar se a consulta retornou resultados
+if (!$result) {
+    die("Erro na consulta: " . $conn->error);
+}
 ?>
 
 <!DOCTYPE html>
@@ -39,8 +50,8 @@ $result = $conn->query($sql);
 <body>
     <div class="container-fluid">
         <div class="row">
-<!-- Sidebar -->
-<nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
                 <div class="position-sticky">
                     <h4 class="text-center mt-3">Administração</h4>
                     <ul class="nav flex-column">
@@ -51,7 +62,7 @@ $result = $conn->query($sql);
                             <a class="nav-link" href="alunos.php">Alunos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="professores.php">Professores</a>
+                            <a class="nav-link" href="professores.php">Professores</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="tarefas.php">Tarefas</a>
@@ -60,7 +71,7 @@ $result = $conn->query($sql);
                             <a class="nav-link" href="eventos.php">Eventos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="relatorios.php">Relatórios</a>
+                            <a class="nav-link active" href="relatorios.php">Relatórios</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="comunicacao.php">Comunicação</a>
@@ -70,9 +81,9 @@ $result = $conn->query($sql);
                         </li>
                     </ul>
                     <!-- Botão de sair, abaixo de configurações -->
-        <div class="mt-3">
-            <a href="../../logout.php" class="btn btn-danger w-100">Sair</a>
-        </div>
+                    <div class="mt-3">
+                        <a href="../../logout.php" class="btn btn-danger w-100">Sair</a>
+                    </div>
                 </div>
             </nav>
 

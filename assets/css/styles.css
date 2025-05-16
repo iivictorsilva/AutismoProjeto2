@@ -30,7 +30,7 @@ body {
 }
 
 .sidebar.collapsed {
-    width: 80px;
+    width: 80px; /* Contrair a sidebar */
 }
 
 .sidebar .nav-link {
@@ -44,7 +44,7 @@ body {
 }
 
 .sidebar.collapsed .nav-link {
-    justify-content: center;
+    justify-content: center; /* Centraliza o conteúdo quando contraído */
 }
 
 .sidebar .nav-link i {
@@ -56,7 +56,7 @@ body {
 }
 
 .sidebar.collapsed .nav-link i {
-    margin-right: 0;
+    margin-right: 0; /* Remove o espaço entre ícones e texto ao contrair */
 }
 
 .sidebar .nav-link span {
@@ -65,7 +65,7 @@ body {
 }
 
 .sidebar.collapsed .nav-link span {
-    display: none;
+    display: none; /* Esconde o texto quando contraído */
 }
 
 /* Conteúdo principal */
@@ -78,7 +78,7 @@ body {
 /* Container */
 .container {
     display: flex;
-    width: 80%;
+    width: 100%;
     max-width: 1200px;
     height: 600px;
     background: #fff;
@@ -308,9 +308,73 @@ label.select-input select:focus {
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
 }
 
+/* Ajustes para o campo select e o ícone */
+label.select-input {
+    position: relative; /* Torna o label relativo para posicionar o ícone dentro dele */
+    width: 100%;
+}
+
+label.select-input select {
+    width: 100%;
+    padding-left: 40px; /* Deixa espaço suficiente para o ícone */
+    padding-right: 10px; /* Pode ajustar a margem da direita se necessário */
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+label.select-input select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+/* Posicionando o ícone */
 label.select-input i {
     position: absolute;
-    left: 10px;
-    top: 10px;
+    left: 10px; /* Distância do lado esquerdo */
+    top: 50%; /* Alinha verticalmente o ícone */
+    transform: translateY(-50%); /* Corrige a centralização vertical */
     color: #999;
+    pointer-events: none; /* Evita que o ícone interfira na interação do select */
 }
+
+/* Caixa de seleção personalizada */
+.custom-select {
+    position: relative;
+    width: 250px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Caixa de texto principal */
+.select-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Ícone dentro da caixa de seleção */
+.select-box i {
+    color: #2a9d8f;
+    position: absolute;
+    right: 10px;
+}
+
+.select-box.open i {
+    transform: rotate(180deg);
+}
+
+select {
+    display: none;
+}
+

@@ -1,11 +1,20 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e se é um administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário não está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../../login/login.php");
     exit();
 }
+
+// Verificar se o usuário está logado e redirecionar para verifica_acesso.php
+// Apenas redireciona se o usuário não for admin
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");
+    exit();
+}
+
+// Se o usuário for admin, permitir acesso à página
 
 // Conectar ao banco de dados
 $host = "localhost";
@@ -24,6 +33,10 @@ if ($conn->connect_error) {
 $sql = "SELECT id, nome, email, matricula FROM usuarios WHERE tipo_usuario = 'aluno'";
 $result = $conn->query($sql);
 ?>
+
+
+
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

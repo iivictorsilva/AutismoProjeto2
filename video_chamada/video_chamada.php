@@ -53,7 +53,7 @@ if (!isset($_SESSION['user_id'])) {  // Alterado para 'user_id'
         </div>
         
         <div class="mt-3">
-            <a href="dashboard.php" class="btn btn-primary">Voltar ao Dashboard</a>
+            <a href="../dashboard/aluno/index.php" class="btn btn-primary">Voltar ao Dashboard</a>
         </div>
     </div>
 

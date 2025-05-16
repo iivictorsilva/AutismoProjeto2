@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e se é um administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login/login.php");  // Diretório relativo
+    exit();
+}
+
+// Verificar se o usuário é administrador
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");  // Diretório relativo
     exit();
 }
 
@@ -26,7 +32,14 @@ $sql = "SELECT tarefas.id, tarefas.titulo, tarefas.descricao, tarefas.prazo, usu
         INNER JOIN usuarios ON tarefas.usuario_id = usuarios.id
         WHERE usuarios.tipo_usuario = 'professor'";  // Garantir que estamos pegando apenas professores
 $result = $conn->query($sql);
+
+// Verificar se a consulta foi bem-sucedida
+if (!$result) {
+    die("Erro na consulta: " . $conn->error);
+}
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e é administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../../login/login.php");
+    exit();
+}
+
+// Verificar se o usuário está logado e redirecionar para verifica_acesso.php caso não seja admin
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");
     exit();
 }
 
@@ -27,16 +33,24 @@ if (isset($_GET['id']) && isset($_GET['tipo'])) {
 
     // Validar o tipo de usuário
     if (in_array($tipo_usuario, ['professor', 'aluno'])) {
-        // Executar o DELETE com base no tipo
-        $sql_delete = "DELETE FROM usuarios WHERE id = $id AND tipo_usuario = '$tipo_usuario'";
+        // Verificar se o ID é do tipo correto (professor ou aluno)
+        $sql_check = "SELECT id FROM usuarios WHERE id = $id AND tipo_usuario = '$tipo_usuario'";
+        $result_check = $conn->query($sql_check);
 
-        if ($conn->query($sql_delete) === TRUE) {
-            // Redirecionar para a página correspondente
-            $redirect_page = ($tipo_usuario === 'professor') ? 'professores.php' : 'alunos.php';
-            header("Location: $redirect_page");
-            exit();
+        if ($result_check->num_rows > 0) {
+            // Executar o DELETE com base no tipo
+            $sql_delete = "DELETE FROM usuarios WHERE id = $id AND tipo_usuario = '$tipo_usuario'";
+
+            if ($conn->query($sql_delete) === TRUE) {
+                // Redirecionar para a página correspondente
+                $redirect_page = ($tipo_usuario === 'professor') ? 'professores.php' : 'alunos.php';
+                header("Location: $redirect_page");
+                exit();
+            } else {
+                echo "Erro ao deletar $tipo_usuario: " . $conn->error;
+            }
         } else {
-            echo "Erro ao deletar $tipo_usuario: " . $conn->error;
+            echo "Usuário não encontrado ou inválido.";
         }
     } else {
         echo "Tipo de usuário inválido.";
@@ -45,3 +59,6 @@ if (isset($_GET['id']) && isset($_GET['tipo'])) {
     echo "Parâmetros inválidos.";
 }
 ?>
+
+
+

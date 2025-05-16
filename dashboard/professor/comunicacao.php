@@ -1,4 +1,7 @@
 <?php
+// Incluindo o arquivo de verificação de acesso
+include('../verifica_acesso.php');
+
 // Conectar ao banco de dados
 $mysqli = new mysqli('localhost', 'root', '', 'autismo_plataforma');
 
@@ -27,8 +30,14 @@ if ($result_nome && $result_nome->num_rows > 0) {
     $user_name = 'Professor não encontrado'; // Mensagem de erro caso o nome não seja encontrado
 }
 
-// Consultar as mensagens recebidas
-$query_mensagens = "SELECT * FROM mensagens WHERE destinatario_id = '$user_id' ORDER BY data_envio DESC";
+// Consultar as mensagens recebidas, agora com o nome do remetente
+$query_mensagens = "
+    SELECT m.*, u.nome AS remetente_nome
+    FROM mensagens m
+    JOIN usuarios u ON m.remetente_id = u.id
+    WHERE m.destinatario_id = '$user_id'
+    ORDER BY m.data_envio DESC
+";
 $result_mensagens = $mysqli->query($query_mensagens);
 ?>
 
@@ -119,7 +128,25 @@ $result_mensagens = $mysqli->query($query_mensagens);
 <body>
     <div class="d-flex" id="wrapper">
         <div class="bg-light sidebar p-3" id="sidebar">
-            <h2 class="text-center" id="site-name">NeuroDev</h2>
+            
+        <h2 class="text-center" id="site-name">
+                    Neuro<span id="dev">Dev</span>
+            </h2>
+
+            <style>
+            @keyframes colorChange {
+            0% { color: rgb(255, 0, 0); }   /* Vermelho */
+            25% { color: rgb(255, 255, 0); } /* Amarelo */
+            50% { color: rgb(0, 0, 255); }   /* Azul */
+            75% { color: rgb(0, 255, 0); }   /* Verde */
+            100% { color: rgb(255, 0, 0); }  /* Vermelho */
+            }
+
+            #dev {
+                animation: colorChange 5s infinite;
+            }
+            </style>
+
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link active" href="../professor/index.php"><i class="fas fa-tachometer-alt"></i> <span>Início</span></a>
@@ -166,8 +193,11 @@ $result_mensagens = $mysqli->query($query_mensagens);
                                     <?php
                                     if ($result_mensagens && $result_mensagens->num_rows > 0) {
                                         while ($msg = $result_mensagens->fetch_assoc()) {
+                                            // Verificar se o campo "conteudo" está disponível
+                                            $conteudo = isset($msg['conteudo']) ? $msg['conteudo'] : 'Conteúdo não disponível';
+
                                             echo '<div class="message-box">';
-                                            echo '<p><strong>' . htmlspecialchars($msg['remetente_nome']) . ':</strong> ' . htmlspecialchars($msg['conteudo']) . '</p>';
+                                            echo '<p><strong>' . htmlspecialchars($msg['remetente_nome']) . ':</strong> ' . htmlspecialchars($conteudo) . '</p>';
                                             echo '<p><small>Enviada em: ' . date('d/m/Y H:i', strtotime($msg['data_envio'])) . '</small></p>';
                                             echo '</div>';
                                         }
@@ -205,12 +235,11 @@ $result_mensagens = $mysqli->query($query_mensagens);
 
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('main-content').classList.toggle('collapsed');
+            var sidebar = document.getElementById("sidebar");
+            sidebar.classList.toggle("collapsed");
         }
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

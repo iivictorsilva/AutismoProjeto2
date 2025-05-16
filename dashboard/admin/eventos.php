@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e se é um administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../../login/login.php");
+    exit();
+}
+
+// Verificar se o usuário não é administrador, e redirecionar para verifica_acesso.php
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");
     exit();
 }
 

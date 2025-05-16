@@ -3,12 +3,21 @@ session_start();
 
 // Verificar se o usuário está logado
 if (!isset($_SESSION['user_id'])) {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+    // Se não estiver logado, redireciona para a página de login
+    header("Location: ../../login/login.php");
     exit();
 }
 
+// Se o usuário estiver logado, redirecionar para verifica_acesso.php
+if (isset($_SESSION['user_id']) && $_SESSION['tipo_usuario'] != 'admin') {
+    // Se for logado, mas não for admin, redireciona para a página de verificação de acesso
+    header("Location: ../verifica_acesso.php");
+    exit();
+}
+
+// Se o usuário for admin, permitir acesso à página
 $user_id = $_SESSION['user_id']; // ID do usuário logado
-$tipo_usuario = $_SESSION['tipo_usuario']; // Tipo de usuário (professor, aluno, admin)
+$tipo_usuario = $_SESSION['tipo_usuario']; // Tipo de usuário (admin)
 
 // Conectar ao banco de dados
 $host = "localhost";
@@ -59,6 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['mensagem_id'])) {
     }
 }
 ?>
+
+
+
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

@@ -1,61 +1,42 @@
 <?php
+// Inicia a sessão para acessar variáveis de sessão
 session_start();
+
+// Inclui o arquivo de conexão com o banco de dados
 require_once('../includes/conexao.php'); // Certifique-se de que o caminho da conexão está correto
 
-// Verificar se o usuário está autenticado
+// Verifica se o usuário está autenticado
 if (!isset($_SESSION['user_id'])) {
+    // Se o usuário não estiver autenticado, redireciona para a página de login
     header('Location: login.php');
-    exit();
+    exit(); // Encerra a execução do script
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+ // Verifica se o método de requisição é POST
+ if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Obtém os dados do formulário
     $titulo = $_POST['titulo'];
     $descricao = $_POST['descricao'];
     $prazo = $_POST['prazo'];
-    $usuario_id = $_SESSION['user_id'];
+    $usuario_id = $_SESSION['user_id']; // Obtém o ID do usuário da sessão
 
-    // Preparar a query para inserir a tarefa
+    // Prepara a query SQL para inserir uma nova tarefa no banco de dados
     $sql = "INSERT INTO tarefas (titulo, descricao, prazo, usuario_id) 
             VALUES ('$titulo', '$descricao', '$prazo', '$usuario_id')";
 
-    // Verificar se a query foi executada com sucesso
+    // Executa a query e verifica se foi bem-sucedida
     if ($conn->query($sql) === TRUE) {
-        header("Location: minhas_tarefas.php"); // Redireciona para a página de tarefas
-        exit();
+        // Se a inserção for bem-sucedida, redireciona para a página de tarefas
+        header("Location: minhas_tarefas.php");
+        exit(); // Encerra a execução do script
     } else {
+        // Se houver um erro na execução da query, exibe uma mensagem de erro
         echo "Erro: " . $sql . "<br>" . $conn->error;
     }
 }
 
-// Fechar a conexão com o banco
+// Fecha a conexão com o banco de dados
 $conn->close();
 ?>
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Tarefa</title>
-    <link rel="stylesheet" href="../src/css/style.css"> <!-- Caminho para o CSS -->
-</head>
-<body>
-    <div class="container">
-        <h2>Criar Nova Tarefa</h2>
 
-        <!-- Formulário para criação de tarefa -->
-        <form action="criar_tarefa.php" method="POST">
-            <label for="titulo">Título:</label>
-            <input type="text" name="titulo" required>
-
-            <label for="descricao">Descrição:</label>
-            <textarea name="descricao" required></textarea>
-
-            <label for="prazo">Prazo:</label>
-            <input type="datetime-local" name="prazo" required>
-
-            <button type="submit">Criar Tarefa</button>
-        </form>
-    </div>
-</body>
-</html>

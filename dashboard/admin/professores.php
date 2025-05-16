@@ -1,9 +1,15 @@
 <?php
 session_start();
 
-// Verificar se o usuário está logado e se é um administrador
-if (!isset($_SESSION['user_id']) || $_SESSION['tipo_usuario'] != 'admin') {
-    header("Location: http://localhost/AutismoProjeto2/login/login.php");
+// Verificar se o usuário está logado
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login/login.php");  // Diretório relativo
+    exit();
+}
+
+// Verificar se o usuário é administrador
+if ($_SESSION['tipo_usuario'] != 'admin') {
+    header("Location: ../verifica_acesso.php");  // Diretório relativo
     exit();
 }
 
@@ -24,6 +30,7 @@ if ($conn->connect_error) {
 $sql = "SELECT id, nome, email, cpf FROM usuarios WHERE tipo_usuario = 'professor'";
 $result = $conn->query($sql);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
